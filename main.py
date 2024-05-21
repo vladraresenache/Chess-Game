@@ -25,7 +25,6 @@ def main():
     screen.fill(p.Color("white"))
     gs = engine.GameState()
     validMovesList = gs.validMoves()
-    print(validMovesList)
     moveMade = False  #flag  var 
     animate = False
     loadImages()

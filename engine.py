@@ -142,29 +142,30 @@ class GameState():
                 
                 if pieceChecking[1] == 'N':
                     validSquares = [(checkRow, checkCol)]
-                    print("ma fut69")
+                    
+
                 else:
                     for i in range(1,8):
                         validSquare = (kingRow + check[2] * i,
                                        kingCol + check[3] * i)
                         validSquares.append(validSquare)
                         if validSquare[0] == checkRow and validSquare[1] == checkCol:
-                            print("ma fut2")
+                            
                             break
                 for i in range(len(moves)-1, -1, -1):
                     if moves[i].pieceMoves[1]!='K':
                         if not (moves[i].endRow, moves[i].endCol) in validSquares:
                             moves.remove(moves[i])
-                            print("ma fut")
+                            
             else:
                 self.kingMoves(kingRow, kingCol, moves)
         else:
             moves = self.allPossibilities()
             if self.whitesMove:
-                print("yeeehaaaw")
+                
                 self.getCastleMoves(self.whiteKLoc[0], self.whiteKLoc[1], moves)
             else:
-                print("neeehaaaw")
+                
                 self.getCastleMoves(self.blackKLoc[0], self.blackKLoc[1], moves)
             
         if len(moves) == 0:
@@ -175,7 +176,7 @@ class GameState():
         else:
             self.checkMate = False
             self.staleMate = False
-        print(self.pins)
+        
         self.currentCastlingPrerogatives = tempCastleRights
         return moves
     
@@ -209,11 +210,12 @@ class GameState():
                     if endPiece[0] == allyColor:
                         if possiblePin == ():
                             possiblePin = (endRow, endCol, d[0], d[1])
-                            print("sex anal")
+                            
                         else:
                             break
                     elif endPiece[0] == enemyColor and endPiece[1]!='K':
                         type = endPiece[1]
+                        
                         if (0 <= j <= 3 and type == 'R') or \
                             (4 <= j <= 7 and type == 'B') or \
                                 (i == 1 and type =='p' and ((enemyColor == 'w') and 6 <= j <= 7) or (enemyColor == 'b' and 4<= j <= 5)) or \
@@ -221,7 +223,7 @@ class GameState():
                                         if possiblePin == ():
                                             
                                             inCheck = True
-                                            print("sex oral")
+                                            
                                             checks.append((endRow, endCol, d[0], d[1]))
                                             break
                                         else:
