@@ -25,6 +25,7 @@ def main():
     screen.fill(p.Color("white"))
     gs = engine.GameState()
     validMovesList = gs.validMoves()
+    print(validMovesList)
     moveMade = False  #flag  var 
     animate = False
     loadImages()
@@ -70,6 +71,7 @@ def main():
                 if e.key == p.K_r:
                     gs = engine.GameState() 
                     validMovesList = gs.validMoves()
+                    print(validMovesList)
                     sqSelected = ()
                     playerClicks = []
                     moveMade = False

@@ -22,9 +22,9 @@ class GameState():
         self.EnPassantValidSq = ()
         self.pins = []
         self.checks = []
-        #self.currentCastlingPrerogatives = CastlingPrerogatives(True, True, True, True)
-        #self.castlePrerogativesHistory = [CastlingPrerogatives(self.currentCastlingPrerogatives.wk_side, self.currentCastlingPrerogatives.bk_side,
-                                                               #self.currentCastlingPrerogatives.wq_side, self.currentCastlingPrerogatives.bq_side)]
+        self.currentCastlingPrerogatives = CastlingPrerogatives(True, True, True, True)
+        self.castlePrerogativesHistory = [CastlingPrerogatives(self.currentCastlingPrerogatives.wk_side, self.currentCastlingPrerogatives.bk_side,
+                                                               self.currentCastlingPrerogatives.wq_side, self.currentCastlingPrerogatives.bq_side)]
     
     def makeMove(self, move):
         self.board[move.startRow][move.startCol] = "--"
@@ -47,9 +47,17 @@ class GameState():
         else:
             self.EnPassantValidSq = ()
             
-        # self.updateCastlePrerogatives(move)
-        # self.castlePrerogativesHistory.append(CastlingPrerogatives(self.currentCastlingPrerogatives.wk_side, self.currentCastlingPrerogatives.bk_side,
-        #                                                             self.currentCastlingPrerogatives.wq_side, self.currentCastlingPrerogatives.bq_side))
+        if move.isCastleMove:
+            if move.endCol - move.startCol == 2:
+                self.board[move.endRow][move.endCol-1] = self.board[move.endRow][move.endCol+1]
+                self.board[move.endRow][move.endCol+1] = '--'
+            else:    
+                self.board[move.endRow][move.endCol+1] = self.board[move.endRow][move.endCol-2]
+                self.board[move.endRow][move.endCol-2] = '--'
+            
+        self.updateCastlePrerogatives(move)
+        self.castlePrerogativesHistory.append(CastlingPrerogatives(self.currentCastlingPrerogatives.wk_side, self.currentCastlingPrerogatives.bk_side,
+                                                                    self.currentCastlingPrerogatives.wq_side, self.currentCastlingPrerogatives.bq_side))
                      
         
     def undoMove(self):
@@ -71,32 +79,51 @@ class GameState():
             if move.pieceMoves[1] == 'p' and abs(move.startRow - move.endRow) == 2:
                 self.EnPassantValidSq = ()
             
-            # self.castlePrerogativesHistory.pop()
-            # self.currentCastlingPrerogatives = self.castlePrerogativesHistory[-1]
+            self.castlePrerogativesHistory.pop()
+            self.currentCastlingPrerogatives = self.castlePrerogativesHistory[-1]
+            
+            if move.isCastleMove:
+                if move.endCol - move.startCol == 2:
+                    self.board[move.endRow][move.endCol+1] = self.board[move.endRow][move.endCol-1]
+                    self.board[move.endRow][move.endCol-1] = '--'
+                else:
+                     self.board[move.endRow][move.endCol-2] = self.board[move.endRow][move.endCol+1]
+                     self.board[move.endRow][move.endCol+1] = '--'
  
                 
-    # def updateCastlePrerogatives(self, move):
-    #     if move.pieceMoves == 'wK':
-    #         self.currentCastlingPrerogatives.wk_side = False
-    #         self.currentCastlingPrerogatives.wq_side = False
-    #     elif move.pieceMoves == 'bK':
-    #         self.currentCastlingPrerogatives.bk_side = False
-    #         self.currentCastlingPrerogatives.bq_side = False
-    #     elif move.pieceMoved == 'wR':
-    #         if move.startRow == 7:
-    #             if move.startCol == 0:
-    #                 self.currentCastlingPrerogatives.wq_side = False
-    #             elif move.startCol == 7:
-    #                 self.currentCastlingPrerogatives.wk_side = False
-    #     elif move.pieceMoved == 'bR':
-    #         if move.startRow == 0:
-    #                 if move.startCol == 0:
-    #                     self.currentCastlingPrerogatives.bq_side = False
-    #                 elif move.startCol == 7:
-    #                     self.currentCastlingPrerogatives.bk_side = False
+    def updateCastlePrerogatives(self, move):
+        if move.pieceMoves == 'wK':
+            self.currentCastlingPrerogatives.wk_side = False
+            self.currentCastlingPrerogatives.wq_side = False
+        elif move.pieceMoves == 'bK':
+            self.currentCastlingPrerogatives.bk_side = False
+            self.currentCastlingPrerogatives.bq_side = False
+        elif move.pieceMoves == 'wR':
+            if move.startRow == 7:
+                if move.startCol == 0:
+                    self.currentCastlingPrerogatives.wq_side = False
+                elif move.startCol == 7:
+                    self.currentCastlingPrerogatives.wk_side = False
+        elif move.pieceMoves == 'bR':
+            if move.startRow == 0:
+                    if move.startCol == 0:
+                        self.currentCastlingPrerogatives.bq_side = False
+                    elif move.startCol == 7:
+                        self.currentCastlingPrerogatives.bk_side = False
+    
+    def squareUnderAttack(self, r, c):
+        self.whitesMove = not self.whitesMove
+        oppMoves = self.allPossibilities()
+        self.whitesMove = not self.whitesMove
+        for move in oppMoves:
+            if move.endRow == r and move.endCol == c:
+                return True
+        return False
             
     def validMoves(self):
         moves=[]
+        tempCastleRights = CastlingPrerogatives(self.currentCastlingPrerogatives.wk_side, self.currentCastlingPrerogatives.bk_side,
+                                                self.currentCastlingPrerogatives.wq_side, self.currentCastlingPrerogatives.bq_side)
         self.inCheck, self.pins, self.checks = self.checkForPinsAndChecks()
         if self.whitesMove:
             kingRow = self.whiteKLoc[0]
@@ -115,25 +142,41 @@ class GameState():
                 
                 if pieceChecking[1] == 'N':
                     validSquares = [(checkRow, checkCol)]
+                    print("ma fut69")
                 else:
                     for i in range(1,8):
-                        validSquare = (kingRow + check[2] * i, kingCol + check[3] * i)
+                        validSquare = (kingRow + check[2] * i,
+                                       kingCol + check[3] * i)
                         validSquares.append(validSquare)
                         if validSquare[0] == checkRow and validSquare[1] == checkCol:
+                            print("ma fut2")
                             break
                 for i in range(len(moves)-1, -1, -1):
                     if moves[i].pieceMoves[1]!='K':
                         if not (moves[i].endRow, moves[i].endCol) in validSquares:
                             moves.remove(moves[i])
+                            print("ma fut")
             else:
                 self.kingMoves(kingRow, kingCol, moves)
         else:
             moves = self.allPossibilities()
-        if moves == []:
+            if self.whitesMove:
+                print("yeeehaaaw")
+                self.getCastleMoves(self.whiteKLoc[0], self.whiteKLoc[1], moves)
+            else:
+                print("neeehaaaw")
+                self.getCastleMoves(self.blackKLoc[0], self.blackKLoc[1], moves)
+            
+        if len(moves) == 0:
             if self.inCheck:
                 self.checkMate = True
             else:
                 self.staleMate = True
+        else:
+            self.checkMate = False
+            self.staleMate = False
+        print(self.pins)
+        self.currentCastlingPrerogatives = tempCastleRights
         return moves
     
     def checkForPinsAndChecks(self):
@@ -166,6 +209,7 @@ class GameState():
                     if endPiece[0] == allyColor:
                         if possiblePin == ():
                             possiblePin = (endRow, endCol, d[0], d[1])
+                            print("sex anal")
                         else:
                             break
                     elif endPiece[0] == enemyColor and endPiece[1]!='K':
@@ -177,7 +221,7 @@ class GameState():
                                         if possiblePin == ():
                                             
                                             inCheck = True
-                                            
+                                            print("sex oral")
                                             checks.append((endRow, endCol, d[0], d[1]))
                                             break
                                         else:
@@ -355,18 +399,32 @@ class GameState():
                     else:
                         self.blackKLoc = (r,c)
                         
-       # self.getCastleMoves(r, c, moves, allyColor)
         
-    # def getCastleMoves(self, r, c, moves, allyColor):
-    #     if self.
-        
+    def getCastleMoves(self, r, c, moves):
+        if self.squareUnderAttack(r, c):
+            return 
+        if (self.whitesMove and self.currentCastlingPrerogatives.wk_side) or (not self.whitesMove and self.currentCastlingPrerogatives.bk_side):
+            self.getKingSide(r,c,moves)
+        if (self.whitesMove and self.currentCastlingPrerogatives.wq_side) or (not self.whitesMove and self.currentCastlingPrerogatives.bq_side):
+            self.getQueenSide(r,c,moves)
+            
     
-# class CastlingPrerogatives():
-#     def __init__(self, wk_side, bk_side, wq_side, bq_side):
-#             self.wk_side = wk_side
-#             self.bk_side = bk_side
-#             self.wq_side = wq_side
-#             self.bk_side = bk_side
+    def getKingSide(self, r,c, moves):
+        if self.board[r][c+1] == '--' and self.board[r][c+2] == '--':
+            if not self.squareUnderAttack(r, c+1) and not self.squareUnderAttack(r, c+2):
+                moves.append(Move((r,c), (r, c+2), self.board, isCastleMove = True))
+            
+    def getQueenSide(self, r, c, moves):
+        if self.board[r][c-1] == '--' and self.board[r][c-2] == '--' and self.board[r][c-3] == '--':
+            if not self.squareUnderAttack(r, c-1) and not self.squareUnderAttack(r, c-2):
+                moves.append(Move((r,c), (r, c-2), self.board, isCastleMove = True))
+    
+class CastlingPrerogatives():
+    def __init__(self, wk_side, bk_side, wq_side, bq_side):
+            self.wk_side = wk_side
+            self.bk_side = bk_side
+            self.wq_side = wq_side
+            self.bq_side = bq_side
             
         
         
@@ -383,7 +441,7 @@ class Move():
     colsToFiles = {v: k for k, v in filesToCols.items()}
     
     
-    def __init__(self, startSq, endSq, board, isEnPassantMove = False):
+    def __init__(self, startSq, endSq, board, isEnPassantMove = False, isCastleMove = False):
         self.startRow = startSq[0]
         self.startCol = startSq[1]
         self.endRow = endSq[0]
@@ -398,11 +456,8 @@ class Move():
         self.isEnPassantPossible = isEnPassantMove
         if self.isEnPassantPossible:
             self.pieceCaptured = 'wp' if self.pieceMoves == 'bp' else 'bp'
-            #print(self.pieceMoves)
-        
-        #print(self.isEnPassantPossible)
-        #print((self.startRow, self.startCol))
-        #print("    ")
+            
+        self.isCastleMove = isCastleMove
         
         
         self.moveID = self.startRow * 1000 + self.startCol *100 + self.endRow * 10 + self.endCol
